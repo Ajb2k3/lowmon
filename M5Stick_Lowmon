@@ -1,0 +1,84 @@
+from m5stack import *
+from m5ui import *
+from uiflow import *
+import imu
+import hat
+
+setScreenColor(0x111111)
+
+hat_spk0 = hat.get(hat.SPEAKER)
+
+
+imu0 = imu.IMU()
+label0 = M5TextBox(23, 74, "Text", lcd.FONT_Default,0xFFFFFF, rotate=0)
+label1 = M5TextBox(19, 109, "Text", lcd.FONT_Default,0xFFFFFF, rotate=0)
+
+active = None
+counter1 = None
+
+
+def buttonA_wasPressed():
+  global active, counter1
+  active = False
+  counter1 = 0
+  label0.setColor(0xffffff)
+  label1.setColor(0xffffff)
+  setScreenColor(0x000000)
+  hat_spk0.sing(831, 1)
+  label0.setText(str(counter1))
+  label1.setText('Clear')
+  pass
+btnA.wasPressed(buttonA_wasPressed)
+
+@timerSch.event('timer1')
+def ttimer1():
+  global active, counter1
+  if active == True:
+    counter1 = (counter1 if isinstance(counter1, int) else 0) + 1
+  label0.setText(str(counter1))
+  pass
+
+@timerSch.event('timer2')
+def ttimer2():
+  global active, counter1
+  if counter1 > 60 and counter1 < 120:
+    label1.setText('stage 1 alarm')
+    setScreenColor(0xffff00)
+    hat_spk0.sing(220, 1)
+    label0.setColor(0x000000)
+    label1.setColor(0x000000)
+  if counter1 > 120 and counter1 < 180:
+    label1.setText('stage 2 alarm')
+    setScreenColor(0xff6600)
+    hat_spk0.sing(448, 1)
+    label0.setColor(0x000000)
+    label1.setColor(0x000000)
+  if counter1 > 180:
+    label1.setText('stage 3 alarm')
+    setScreenColor(0xff0000)
+    hat_spk0.sing(889, 1)
+    label0.setColor(0x000000)
+    label1.setColor(0x000000)
+  pass
+
+@timerSch.event('timer3')
+def ttimer3():
+  global active, counter1
+  if (imu0.acceleration[0]) > 1.9:
+    if active == False:
+      active = True
+      label1.setText('Impact')
+  pass
+
+
+timerSch.run('timer1', 1000, 0x00)
+timerSch.run('timer2', 1000, 0x00)
+timerSch.run('timer3', 15, 0x00)
+hat_spk0.sing(220, 1)
+counter1 = 0
+setScreenColor(0x000000)
+label0.setColor(0xffffff)
+label1.setColor(0xffffff)
+label0.setText(str(counter1))
+label1.setText('Clear')
+active = False
